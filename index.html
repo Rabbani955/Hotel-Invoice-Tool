@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rabbani Invoice Generator Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Basic Setup */
+        :root {
+            --brand-color: #F9A825; /* Mango Yellow/Gold */
+            --brand-dark: #E69820; /* Darker tone for hover */
+            --brand-success: #198754; /* Standard Green for Print */
+            --brand-danger: #dc3545;
+            --text-dark: #111827; /* Darker text */
+            --text-secondary: #6b7280; /* Softer secondary text */
+            --bg-light: #f9fafb; /* Lighter background */
+            --border-color: #e5e7eb; /* Lighter border */
+            --border-radius: 0.5rem; /* Slightly larger radius */
+            --mango-light: #FFF8E1; /* Very light yellow for total section */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping for small screens */
+            gap: 2rem;
+            margin: 2rem;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* Controls / Input Form */
+        .controls {
+            width: 450px;
+            min-width: 320px; /* Ensure it's usable on mobile */
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            height: fit-content;
+            flex-grow: 1; /* Allow to grow */
+            border: 1px solid var(--border-color);
+        }
+        .controls h2 {
+            margin-top: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+            /* Beautiful gradient text in Mango/Gold */
+            background: linear-gradient(to right, #F9A825, #E69820);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .controls h3 {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-top: 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .controls label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .controls input[type="text"],
+        .controls input[type="date"],
+        .controls input[type="number"],
+        .controls textarea {
+            display: block;
+            width: calc(100% - 1.5rem); /* Full width minus padding */
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem; /* Standard radius */
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+        }
+        .controls input:focus, .controls textarea:focus {
+            border-color: var(--brand-color);
+            box-shadow: 0 0 0 0.25rem rgba(249, 168, 37, 0.4); /* Custom yellow shadow */
+            outline: 0;
+        }
+
+        .controls textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .controls button {
+            background-color: var(--brand-color);
+            color: var(--text-dark); /* Dark text on yellow button */
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: 600; /* Bold text for visibility */
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+        .controls button:hover {
+            background-color: var(--brand-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        
+        /* Override specific buttons for visibility/semantic meaning */
+        #printInvoice {
+            background-color: var(--brand-success);
+            color: white;
+        }
+        #printInvoice:hover {
+            background-color: #157347;
+        }
+        #deleteItem {
+            background-color: var(--brand-danger);
+            color: white;
+        }
+        #deleteItem:hover {
+             background-color: #bb2d3b;
+        }
+
+
+        #item-inputs {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        #item-inputs th, #item-inputs td {
+            padding: 8px 4px;
+            text-align: left;
+        }
+        #item-inputs th {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        #item-inputs input {
+            width: 85%;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+        #item-inputs .item-amount {
+            text-align: right;
+            padding-right: 10px;
+            font-weight: 500;
+        }
+
+        /* Invoice Preview */
+        #invoice-preview {
+            width: 800px;
+            max-width: 100%; /* Make it responsive */
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            padding: 3rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            flex-grow: 2; /* Allow to grow more */
+            border-radius: var(--border-radius);
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap; /* Wrap on small screens */
+            padding-bottom: 1.5rem;
+        }
+        .invoice-header h1 {
+            margin: 0;
+            color: var(--text-dark);
+            font-weight: 700;
+            font-size: 2rem;
+        }
+        .invoice-header p {
+            margin: 2px 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .logo img {
+            width: 170px;
+            height: 170px;
+            object-fit: contain;
+            opacity: 0.8;
+        }
+
+        .gst-bar {
+            background-color: #374151; /* Dark Gray for high contrast */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-align: center;
+            border-radius: 0.375rem;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden; 
+        }
+        .details-box {
+            padding: 1.5rem;
+            word-break: break-word; 
+        }
+        .details-box:first-child {
+            border-right: 1px solid var(--border-color);
+        }
+        .details-box .box-header {
+            background: var(--mango-light); /* Light mango background */
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            margin: -1.5rem -1.5rem 1.25rem -1.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--brand-dark); /* Darker text for header */
+        }
+        .details-box p {
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+        .details-box p strong {
+            color: var(--text-dark);
+            font-weight: 500;
+            margin-right: 6px;
+        }
+        .details-box p span {
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            font-size: 0.9rem;
+        }
+        .items-table th, .items-table td {
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.25rem;
+            text-align: left;
+        }
+        .items-table th {
+            background: var(--mango-light); /* Light mango background */
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--brand-dark);
+        }
+        .items-table tr:last-child td {
+            border-bottom: none;
+        }
+        .items-table td:nth-child(2), 
+        .items-table td:nth-child(3), 
+        .items-table td:nth-child(4) {
+            text-align: right;
+        }
+        .items-table td:nth-child(3), .items-table td:nth-child(4) {
+            font-weight: 500;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-bottom-left-radius: var(--border-radius);
+            border-bottom-right-radius: var(--border-radius);
+        }
+        .words-box {
+            padding: 1.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-right: 1px solid var(--border-color);
+            word-wrap: break-word;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .summary-table td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .summary-table tr:last-child td {
+            border-bottom: none;
+        }
+        .summary-table td:first-child {
+            color: var(--text-secondary);
+        }
+        .summary-table td:last-child {
+            text-align: right;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+        .grand-total td {
+            font-weight: 700;
+            font-size: 1.15em;
+            background: var(--mango-light); /* Highlight total with light mango */
+            color: var(--brand-dark);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .footer-grid strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+        .signature {
+            text-align: right;
+        }
+        .signature img {
+            height: 55px;
+            width: 140px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 0.5rem;
+            object-fit: contain;
+            border-radius: 0.375rem;
+        }
+        .signature p {
+            font-size: 0.85rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            body {
+                margin: 1rem;
+                gap: 1rem;
+            }
+            .controls {
+                width: 100%;
+                padding: 1.5rem;
+            }
+            #invoice-preview {
+                padding: 2rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .details-grid, .summary-grid, .footer-grid {
+                grid-template-columns: 1fr; /* Stack columns */
+            }
+            .details-box:first-child {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .words-box {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .invoice-header {
+                text-align: center;
+            }
+            .logo {
+                margin: 10px auto;
+            }
+            .footer-grid {
+                gap: 1.5rem;
+            }
+            .signature {
+                text-align: left;
+            }
+        }
+
+        /* Print Styles - This is key for printing only the invoice */
+        @media print {
+            body {
+                margin: 0;
+                background: #fff;
+                display: block; /* Revert flex for printing */
+                -webkit-print-color-adjust: exact; /* Force colors and backgrounds to print */
+                color-adjust: exact;
+            }
+            .controls {
+                display: none; /* HIDE THE INPUT FORM */
+            }
+            #invoice-preview {
+                width: 100%;
+                max-width: 100%;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                border-radius: 0;
+            }
+            /* Ensure background colors print correctly */
+            .gst-bar {
+                 background-color: #374151 !important;
+                 color: #fff !important;
+            }
+            .details-box .box-header, .items-table th {
+                background: var(--mango-light) !important;
+                color: var(--brand-dark) !important;
+            }
+            .grand-total td {
+                background: var(--mango-light) !important;
+                color: var(--brand-dark) !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CONTROLS (INPUT FORM) -->
+    <div class="controls">
+        <h2>Invoice Generator</h2>
+        
+        <h3>Bill To / Customer Details</h3>
+        <label for="customerName">Name</label>
+        <input type="text" id="customerName" placeholder="e.g., Rabbani ">
+        <label for="companyName">Company Name</label>
+        <input type="text" id="companyName" placeholder="e.g., RABBANI INDIA.LTD">
+        <label for="customerGst">Customer GST No.</label>
+        <input type="text" id="customerGst" placeholder="e.g., 09AABCD0052F1Z6">
+        <label for="customerAddress">Customer Address</label>
+        <textarea id="customerAddress" placeholder="e.g., A-154a, 2nd floor..."></textarea>
+
+        <h3>Invoice Details</h3>
+        <label for="invoiceNo">Invoice No.</label>
+        <input type="text" id="invoiceNo" placeholder="e.g., 1107">
+        <label for="invoiceDate">Invoice Date:</label>
+        <input type="date" id="invoiceDate">
+        <label for="checkInDate">Check In Date:</label>
+        <input type="date" id="checkInDate">
+        <label for="checkOutDate">Check Out Date:</label>
+        <input type="date" id="checkOutDate">
+
+        <h3>Line Items</h3>
+        <table id="item-inputs">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Days</th>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="text" class="item-desc" value="Room Tariff"></td>
+                    <td><input type="number" class="item-days" value="1" min="0"></td>
+                    <td><input type="number" class="item-rate" value="1000" min="0" step="0.01"></td>
+                    <td class="item-amount">1000.00</td>
+                </tr>
+            </tbody>
+        </table>
+        <button id="addItem">Add Item</button>
+        <button id="deleteItem">Delete Last Item</button>
+        
+        <h3>Taxes (%)</h3>
+        <label for="sgstRate">SGST (%):</label>
+        <input type="number" id="sgstRate" value="6" step="0.01">%
+        <label for="cgstRate">CGST (%):</label>
+        <input type="number" id="cgstRate" value="6" step="0.01">%
+
+        <button id="printInvoice">Print Invoice</button>
+    </div>
+
+    <!-- INVOICE PREVIEW -->
+    <div id="invoice-preview">
+        <div class="invoice-header">
+            <div>
+                <h1>MARELLA GRAND INN</h1>
+                <p>#33, 5th Stage , Rajarajeshwari Nagar, Bangalore , Karnataka</p>
+                <p>Bangalore - 560098, KARNATAKA - INDIA</p>
+                <p>E Mail : marellagrandinn@gmail.com</p>
+            </div>
+            <div class="logo">
+                <img src="IMG_20230622_165604 (1).jpg" alt="Marella Grand Logo">
+            </div>
+        </div>
+        <p class="gst-bar"><strong>GST NO: 29RGNPS2236C1ZT</strong></p>
+
+        <div class="details-grid">
+            <div class="details-box">
+                <div class="box-header">Bill To / Customer Details</div>
+                <p><strong>COMPANY NAME:</strong> <span id="out_companyName"></span></p>
+                <p><strong>GST NO:</strong> <span id="out_customerGst"></span></p>
+                <p><strong>NAME:</strong> <span id="out_customerName"></span></p>
+                <p><strong>ADDRESS:</strong> <span id="out_customerAddress"></span></p>
+            </div>
+            <div class="details-box">
+                <div class="box-header">Invoice Details</div>
+                <p><strong>Invoice No.:</strong> <span id="out_invoiceNo"></span></p>
+                <p><strong>Invoice Date:</strong> <span id="out_invoiceDate"></span></p>
+                <p><strong>Check In Date:</strong> <span id="out_checkInDate"></span></p>
+                <p><strong>Check Out Date:</strong> <span id="out_checkOutDate"></span></p>
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>DESCRIPTION</th>
+                    <th>No. of Days</th>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody id="invoice-items-output">
+                <!-- JS will fill this -->
+            </tbody>
+        </table>
+
+        <div class="summary-grid">
+            <div class="words-box">
+                <p id="out_words">ONE THOUSAND ONE HUNDRED TWENTY RUPEES ONLY</p>
+            </div>
+            <div class="summary-box">
+                <table class="summary-table">
+                    <tr>
+                        <td>Sub - Total</td>
+                        <td id="out_subtotal">0.00</td>
+                    </tr>
+                    <tr>
+                        <td>SGST @ <span id="out_sgstRate">6</span>%</td>
+                        <td id="out_sgst">0.00</td>
+                    </tr>
+                    <tr>
+                        <td>CGST @ <span id="out_cgstRate">6</span>%</td>
+                        <td id="out_cgst">0.00</td>
+                    </tr>
+                    <tr class="grand-total">
+                        <td>Grand Total</td>
+                        <td id="out_grandTotal">0.00</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="footer-grid">
+            <div class="account-details">
+                <strong>Account Details</strong>
+                <p>NAME: JAKIR UDDIN</p>
+                <p>AC NO: 7246404463</p>
+                <p>BANK: KOTAK MAHINDRA BANK</p>
+                <p>BRANCH: RV COLLEGE</p>
+                <p>IFSC: KKBK0008053</p>
+            </div>
+            <div class="signature">
+                <strong>MARELLA GRAND INN</strong>
+                <img src="Screenshot 2025-11-05 103627.png" alt="Signature">
+                <p>(Authorised Signatory)</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Wait for the document to be fully loaded
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // Select all key elements
+            const inputs = document.querySelectorAll(".controls input, .controls textarea");
+            const addItemButton = document.getElementById("addItem");
+            const deleteItemButton = document.getElementById("deleteItem");
+            const itemInputsTable = document.querySelector("#item-inputs tbody");
+            const printButton = document.getElementById("printInvoice");
+
+            // --- Main function to update the entire invoice ---
+            function generateInvoice() {
+                
+                // 1. Transfer simple text/date values
+                setValue("out_customerName", "customerName");
+                setValue("out_companyName", "companyName");
+                setValue("out_customerGst", "customerGst");
+                setValue("out_customerAddress", "customerAddress", true); // Handle newlines
+                setValue("out_invoiceNo", "invoiceNo");
+                setValue("out_invoiceDate", "invoiceDate", false, true); // Format date
+                setValue("out_checkInDate", "checkInDate", false, true); // Format date
+                setValue("out_checkOutDate", "checkOutDate", false, true); // Format date
+
+                // 2. Handle Line Items and Calculate Totals
+                const itemsOutput = document.getElementById("invoice-items-output");
+                itemsOutput.innerHTML = ""; // Clear previous items
+                
+                let subtotal = 0;
+                const itemRows = itemInputsTable.querySelectorAll("tr");
+
+                itemRows.forEach(row => {
+                    const desc = row.querySelector(".item-desc").value;
+                    const days = parseFloat(row.querySelector(".item-days").value) || 0;
+                    const rate = parseFloat(row.querySelector(".item-rate").value) || 0;
+                    const amount = days * rate;
+                    
+                    // Update the amount in the input table
+                    row.querySelector(".item-amount").textContent = amount.toFixed(2);
+
+                    // Add row to the preview table
+                    if (desc || days || rate) { // Only add if row is not empty
+                        const previewRow = document.createElement("tr");
+                        previewRow.innerHTML = `
+                            <td>${desc || '&nbsp;'}</td>
+                            <td>${days}</td>
+                            <td>${rate.toFixed(2)}</td>
+                            <td>${amount.toFixed(2)}</td>
+                        `;
+                        itemsOutput.appendChild(previewRow);
+                    }
+                    
+                    subtotal += amount;
+                });
+
+                // 3. Calculate Taxes and Grand Total
+                const sgstRate = parseFloat(document.getElementById("sgstRate").value) || 0;
+                const cgstRate = parseFloat(document.getElementById("cgstRate").value) || 0;
+
+                const sgst = (subtotal * sgstRate) / 100;
+                const cgst = (subtotal * cgstRate) / 100;
+                const grandTotal = subtotal + sgst + cgst;
+
+                // 4. Update Summary Table
+                document.getElementById("out_subtotal").textContent = subtotal.toFixed(2);
+                document.getElementById("out_sgstRate").textContent = sgstRate;
+                document.getElementById("out_cgstRate").textContent = cgstRate;
+                document.getElementById("out_sgst").textContent = sgst.toFixed(2);
+                document.getElementById("out_cgst").textContent = cgst.toFixed(2);
+                document.getElementById("out_grandTotal").textContent = grandTotal.toFixed(2);
+
+                // 5. Update Total in Words
+                const wordsBox = document.getElementById("out_words");
+                wordsBox.textContent = `${convertNumberToWords(Math.round(grandTotal))} RUPEES ONLY`;
+            }
+
+            // --- Helper function to set values in preview ---
+            function setValue(outputId, inputId, isTextarea = false, isDate = false) {
+                const inputElement = document.getElementById(inputId);
+                const outputElement = document.getElementById(outputId);
+                
+                if (!inputElement || !outputElement) return; // Guard clause
+
+                let value = inputElement.value;
+                if (isDate && value) {
+                    // Reformat date from YYYY-MM-DD to DD-MM-YYYY
+                    try {
+                        const parts = value.split('-');
+                        if (parts.length === 3) {
+                             value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                        }
+                    } catch (e) {
+                        value = inputElement.value; // Fallback
+                    }
+                }
+                
+                if (isTextarea) {
+                    outputElement.innerHTML = value.replace(/\n/g, '<br>'); // Preserve line breaks
+                } else {
+                    outputElement.textContent = value;
+                }
+            }
+
+            // --- Event Listeners ---
+
+            // Update invoice on any input change
+            inputs.forEach(input => {
+                input.addEventListener("input", generateInvoice);
+            });
+            
+            // Handle dynamic item inputs (using event delegation)
+            itemInputsTable.addEventListener("input", generateInvoice);
+
+            // Add new item row
+            addItemButton.addEventListener("click", () => {
+                const newRow = document.createElement("tr");
+                newRow.innerHTML = `
+                    <td><input type="text" class="item-desc" placeholder="Service Description"></td>
+                    <td><input type="number" class="item-days" value="1" min="0"></td>
+                    <td><input type="number" class="item-rate" value="0" min="0" step="0.01"></td>
+                    <td class="item-amount">0.00</td>
+                `;
+                itemInputsTable.appendChild(newRow);
+            });
+
+            // Delete last item row
+            deleteItemButton.addEventListener("click", () => {
+                const itemRows = itemInputsTable.querySelectorAll("tr");
+                if (itemRows.length > 1) { // Keep at least one row
+                    itemInputsTable.removeChild(itemRows[itemRows.length - 1]);
+                    generateInvoice(); // Recalculate after deleting
+                }
+            });
+
+            // Print button (This triggers the browser print dialog!)
+            printButton.addEventListener("click", () => {
+                window.print();
+            });
+
+            // Set default date to today
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById("invoiceDate").value = today;
+                document.getElementById("checkInDate").value = today;
+            } catch (e) {
+                console.log("Could not set default date.");
+            }
+
+            // Initial generation on page load
+            generateInvoice();
+        });
+
+
+        // --- Number to Words Helper ---
+        function convertNumberToWords(num) {
+            const a = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
+            const b = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
+
+            if (num === 0) return 'ZERO';
+            if (num < 0) return 'MINUS ' + convertNumberToWords(Math.abs(num));
+
+            let words = '';
+            
+            if (num >= 10000000) { // Crores
+                words += convertNumberToWords(Math.floor(num / 10000000)) + ' CRORE ';
+                num %= 10000000;
+            }
+            if (num >= 100000) { // Lakhs
+                words += convertNumberToWords(Math.floor(num / 100000)) + ' LAKH ';
+                num %= 100000;
+            }
+            if (num >= 1000) { // Thousands
+                words += convertNumberToWords(Math.floor(num / 1000)) + ' THOUSAND ';
+                num %= 1000;
+            }
+            if (num >= 100) { // Hundreds
+                words += convertNumberToWords(Math.floor(num / 100)) + ' HUNDRED ';
+                num %= 100;
+            }
+            if (num >= 20) {
+                words += b[Math.floor(num / 10)] + ' ';
+                num %= 10;
+            }
+            if (num > 0) {
+                words += a[num] + ' ';
+            }
+            
+            return words.trim();
+        }
+    </script>
+</body>
+</html>
